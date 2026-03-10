@@ -1,20 +1,34 @@
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Book My Stay Application
+ * Use Case 3 - Centralized Room Inventory
+ *
+ * @version 3.0
+ */
+
 public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        System.out.println("Book My Stay - Room Types");
+        System.out.println("Book My Stay - Room Inventory");
 
-        String singleRoom = "Single Room";
-        String doubleRoom = "Double Room";
-        String suiteRoom = "Suite Room";
+        // Centralized Inventory using HashMap
+        HashMap<String, Integer> inventory = new HashMap<>();
 
-        int singleAvailable = 5;
-        int doubleAvailable = 3;
-        int suiteAvailable = 2;
+        inventory.put("Single Room", 5);
+        inventory.put("Double Room", 3);
+        inventory.put("Suite Room", 2);
 
-        System.out.println(singleRoom + " Available: " + singleAvailable);
-        System.out.println(doubleRoom + " Available: " + doubleAvailable);
-        System.out.println(suiteRoom + " Available: " + suiteAvailable);
+        System.out.println("\nCurrent Room Availability:");
+
+        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+
+            System.out.println(entry.getKey() + " : " + entry.getValue());
+
+        }
 
     }
+
 }
