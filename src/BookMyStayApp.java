@@ -1,34 +1,31 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Book My Stay Application
- * Use Case 4 - Room Search
+ * Use Case 5 - Booking Request Queue
  *
- * @version 4.0
+ * @version 5.0
  */
 
 public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        System.out.println("Book My Stay - Room Search");
+        System.out.println("Book My Stay - Booking Requests");
 
-        HashMap<String, Integer> inventory = new HashMap<>();
+        Queue<String> bookingQueue = new LinkedList<>();
 
-        inventory.put("Single Room", 5);
-        inventory.put("Double Room", 0);
-        inventory.put("Suite Room", 2);
+        // Guests submitting booking requests
+        bookingQueue.add("Guest1 - Single Room");
+        bookingQueue.add("Guest2 - Double Room");
+        bookingQueue.add("Guest3 - Suite Room");
 
-        System.out.println("\nAvailable Rooms:");
+        System.out.println("\nBooking Queue:");
 
-        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+        for (String request : bookingQueue) {
 
-            if (entry.getValue() > 0) {
-
-                System.out.println(entry.getKey() + " Available: " + entry.getValue());
-
-            }
+            System.out.println(request);
 
         }
 
