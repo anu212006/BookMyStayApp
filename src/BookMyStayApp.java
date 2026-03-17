@@ -1,111 +1,36 @@
 import java.util.*;
 
-// Reservation Class
-class Reservation {
-    String reservationId;
-    String guestName;
-    String roomType;
+// Booking Processor (handles shared resource safely)
+class BookingProcessor {
 
-    Reservation(String reservationId, String guestName, String roomType) {
-        this.reservationId = reservationId;
-        this.guestName = guestName;
-        this.roomType = roomType;
+    private Map<String, Integer> inventory;
+
+    BookingProcessor(Map<String, Integer> inventory) {
+        this.inventory = inventory;
     }
 
-    public String toString() {
-        return reservationId + " | " + guestName + " | " + roomType;
-    }
-}
+    // Critical Section (Thread-safe)
+    public synchronized void bookRoom(String guestName, String roomType) {
 
-// Booking History (UC8)
-class BookingHistory {
-    private List<Reservation> reservations = new ArrayList<>();
+        int available = inventory.getOrDefault(roomType, 0);
 
-    public void addReservation(Reservation reservation) {
-        reservations.add(reservation);
-    }
+        if (available > 0) {
+            System.out.println(Thread.currentThread().getName()
+                    + " processing booking for " + guestName);
 
-    public boolean removeReservation(String id) {
-        return reservations.removeIf(r -> r.reservationId.equals(id));
-    }
-
-    public List<Reservation> getReservations() {
-        return reservations;
-    }
-}
-
-// Report Service (UC8)
-class BookingReportService {
-
-    public void showAllBookings(List<Reservation> reservations) {
-        System.out.println("\n===== BOOKING HISTORY =====");
-        for (Reservation r : reservations) {
-            System.out.println(r);
-        }
-    }
-}
-
-// Custom Exception (UC9)
-class InvalidBookingException extends Exception {
-    public InvalidBookingException(String message) {
-        super(message);
-    }
-}
-
-// Validator (UC9)
-class InvalidBookingValidator {
-
-    public static void validate(String roomType, int roomsAvailable)
-            throws InvalidBookingException {
-
-        if (!(roomType.equals("Deluxe") ||
-                roomType.equals("Suite") ||
-                roomType.equals("Standard"))) {
-            throw new InvalidBookingException("Invalid room type!");
-        }
-
-        if (roomsAvailable <= 0) {
-            throw new InvalidBookingException("No rooms available!");
-        }
-    }
-}
-
-// Cancellation Service (UC10)
-class CancellationService {
-
-    private Stack<String> rollbackStack = new Stack<>();
-
-    public boolean cancelBooking(String reservationId,
-                                 BookingHistory history,
-                                 Map<String, Integer> inventory) {
-
-        List<Reservation> list = history.getReservations();
-
-        for (Reservation r : list) {
-
-            if (r.reservationId.equals(reservationId)) {
-
-                // Push to stack (LIFO rollback)
-                rollbackStack.push(reservationId);
-
-                // Restore inventory
-                inventory.put(r.roomType,
-                        inventory.getOrDefault(r.roomType, 0) + 1);
-
-                // Remove from history
-                history.removeReservation(reservationId);
-
-                System.out.println("Cancellation successful for ID: " + reservationId);
-                return true;
+            // Simulate delay
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+
+            inventory.put(roomType, available - 1);
+
+            System.out.println("Booking SUCCESS for " + guestName);
+        } else {
+            System.out.println("Booking FAILED for " + guestName + " (No rooms)");
         }
-
-        System.out.println("Cancellation failed: Reservation not found!");
-        return false;
-    }
-
-    public void showRollbackStack() {
-        System.out.println("Rollback Stack: " + rollbackStack);
     }
 }
 
@@ -114,53 +39,32 @@ public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        Scanner sc = new Scanner(System.in);
-
-        BookingHistory history = new BookingHistory();
-        BookingReportService reportService = new BookingReportService();
-        CancellationService cancelService = new CancellationService();
-
-        // Inventory
+        // Shared inventory
         Map<String, Integer> inventory = new HashMap<>();
         inventory.put("Deluxe", 2);
-        inventory.put("Suite", 2);
-        inventory.put("Standard", 2);
 
-        System.out.println("Enter Room Type (Deluxe/Suite/Standard): ");
-        String roomType = sc.nextLine();
+        BookingProcessor processor = new BookingProcessor(inventory);
 
+        // Multiple booking requests (threads)
+        Thread t1 = new Thread(() -> processor.bookRoom("Anu", "Deluxe"));
+        Thread t2 = new Thread(() -> processor.bookRoom("Raj", "Deluxe"));
+        Thread t3 = new Thread(() -> processor.bookRoom("Priya", "Deluxe"));
+
+        // Start threads
+        t1.start();
+        t2.start();
+        t3.start();
+
+        // Wait for completion
         try {
-            // UC9 Validation
-            InvalidBookingValidator.validate(roomType, inventory.get(roomType));
-
-            // Booking success
-            System.out.println("Booking successful!");
-
-            // Reduce inventory
-            inventory.put(roomType, inventory.get(roomType) - 1);
-
-            // Add booking (UC8)
-            history.addReservation(new Reservation("R101", "Guest", roomType));
-
-        } catch (InvalidBookingException e) {
-            System.out.println("Booking Failed: " + e.getMessage());
+            t1.join();
+            t2.join();
+            t3.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
-        // Show bookings
-        reportService.showAllBookings(history.getReservations());
-
-        // UC10: Cancellation
-        System.out.println("\nEnter Reservation ID to cancel:");
-        String cancelId = sc.nextLine();
-
-        cancelService.cancelBooking(cancelId, history, inventory);
-
-        // Show updated data
-        reportService.showAllBookings(history.getReservations());
-        cancelService.showRollbackStack();
-
-        System.out.println("Updated Inventory: " + inventory);
-
-        System.out.println("\nSystem remains consistent...");
+        // Final inventory
+        System.out.println("Final Inventory: " + inventory);
     }
 }
