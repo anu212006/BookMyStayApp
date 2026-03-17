@@ -17,7 +17,7 @@ class Reservation {
     }
 }
 
-// Booking History Class (UC8)
+// Booking History (UC8)
 class BookingHistory {
     private List<Reservation> reservations = new ArrayList<>();
 
@@ -25,34 +25,22 @@ class BookingHistory {
         reservations.add(reservation);
     }
 
+    public boolean removeReservation(String id) {
+        return reservations.removeIf(r -> r.reservationId.equals(id));
+    }
+
     public List<Reservation> getReservations() {
         return reservations;
     }
 }
 
-// Report Service Class (UC8)
+// Report Service (UC8)
 class BookingReportService {
 
     public void showAllBookings(List<Reservation> reservations) {
         System.out.println("\n===== BOOKING HISTORY =====");
         for (Reservation r : reservations) {
             System.out.println(r);
-        }
-    }
-
-    public void generateSummary(List<Reservation> reservations) {
-        System.out.println("\n===== SUMMARY REPORT =====");
-        System.out.println("Total Bookings: " + reservations.size());
-
-        Map<String, Integer> roomCount = new HashMap<>();
-
-        for (Reservation r : reservations) {
-            roomCount.put(r.roomType,
-                    roomCount.getOrDefault(r.roomType, 0) + 1);
-        }
-
-        for (String type : roomCount.keySet()) {
-            System.out.println(type + " : " + roomCount.get(type));
         }
     }
 }
@@ -64,7 +52,7 @@ class InvalidBookingException extends Exception {
     }
 }
 
-// Validator Class (UC9)
+// Validator (UC9)
 class InvalidBookingValidator {
 
     public static void validate(String roomType, int roomsAvailable)
@@ -73,13 +61,51 @@ class InvalidBookingValidator {
         if (!(roomType.equals("Deluxe") ||
                 roomType.equals("Suite") ||
                 roomType.equals("Standard"))) {
-
             throw new InvalidBookingException("Invalid room type!");
         }
 
         if (roomsAvailable <= 0) {
             throw new InvalidBookingException("No rooms available!");
         }
+    }
+}
+
+// Cancellation Service (UC10)
+class CancellationService {
+
+    private Stack<String> rollbackStack = new Stack<>();
+
+    public boolean cancelBooking(String reservationId,
+                                 BookingHistory history,
+                                 Map<String, Integer> inventory) {
+
+        List<Reservation> list = history.getReservations();
+
+        for (Reservation r : list) {
+
+            if (r.reservationId.equals(reservationId)) {
+
+                // Push to stack (LIFO rollback)
+                rollbackStack.push(reservationId);
+
+                // Restore inventory
+                inventory.put(r.roomType,
+                        inventory.getOrDefault(r.roomType, 0) + 1);
+
+                // Remove from history
+                history.removeReservation(reservationId);
+
+                System.out.println("Cancellation successful for ID: " + reservationId);
+                return true;
+            }
+        }
+
+        System.out.println("Cancellation failed: Reservation not found!");
+        return false;
+    }
+
+    public void showRollbackStack() {
+        System.out.println("Rollback Stack: " + rollbackStack);
     }
 }
 
@@ -92,32 +118,49 @@ public class BookMyStayApp {
 
         BookingHistory history = new BookingHistory();
         BookingReportService reportService = new BookingReportService();
+        CancellationService cancelService = new CancellationService();
 
-        int roomsAvailable = 2;
+        // Inventory
+        Map<String, Integer> inventory = new HashMap<>();
+        inventory.put("Deluxe", 2);
+        inventory.put("Suite", 2);
+        inventory.put("Standard", 2);
 
         System.out.println("Enter Room Type (Deluxe/Suite/Standard): ");
         String roomType = sc.nextLine();
 
         try {
             // UC9 Validation
-            InvalidBookingValidator.validate(roomType, roomsAvailable);
+            InvalidBookingValidator.validate(roomType, inventory.get(roomType));
 
-            // Booking Success
-            System.out.println("Booking Successful for " + roomType);
+            // Booking success
+            System.out.println("Booking successful!");
 
-            // Add to history (UC8)
+            // Reduce inventory
+            inventory.put(roomType, inventory.get(roomType) - 1);
+
+            // Add booking (UC8)
             history.addReservation(new Reservation("R101", "Guest", roomType));
-
-            roomsAvailable--;
 
         } catch (InvalidBookingException e) {
             System.out.println("Booking Failed: " + e.getMessage());
         }
 
-        // Show History & Report (UC8)
+        // Show bookings
         reportService.showAllBookings(history.getReservations());
-        reportService.generateSummary(history.getReservations());
 
-        System.out.println("\nSystem continues safely...");
+        // UC10: Cancellation
+        System.out.println("\nEnter Reservation ID to cancel:");
+        String cancelId = sc.nextLine();
+
+        cancelService.cancelBooking(cancelId, history, inventory);
+
+        // Show updated data
+        reportService.showAllBookings(history.getReservations());
+        cancelService.showRollbackStack();
+
+        System.out.println("Updated Inventory: " + inventory);
+
+        System.out.println("\nSystem remains consistent...");
     }
 }
