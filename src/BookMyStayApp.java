@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import java.util.*;
 
 // Add-On Service Class
@@ -58,21 +57,11 @@ class AddOnServiceManager {
         }
     }
 }
-=======
-/**
- * Book My Stay Application
- * Entry point for Hotel Booking System
- *
- * @author Student
- * @version 1.0
- */
->>>>>>> 7a1e7622b18b5ffd76f7f05df811d99988e45289
 
 public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-<<<<<<< HEAD
         AddOnServiceManager manager = new AddOnServiceManager();
 
         String reservationId = "R101";
@@ -90,12 +79,4 @@ public class BookMyStayApp {
 
         System.out.println("Total Add-On Cost: ₹" + total);
     }
-=======
-        System.out.println("Welcome to Book My Stay");
-        System.out.println("Hotel Booking Management System");
-        System.out.println("Version 1.0");
-
-    }
-
->>>>>>> 7a1e7622b18b5ffd76f7f05df811d99988e45289
 }
